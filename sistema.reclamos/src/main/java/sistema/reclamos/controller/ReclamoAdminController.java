@@ -21,6 +21,7 @@ import sistema.reclamos.entity.CategoriaReclamo;
 import sistema.reclamos.entity.Estado;
 import sistema.reclamos.entity.Reclamo;
 import sistema.reclamos.entity.Usuario;
+import sistema.reclamos.service.EmailService;
 import sistema.reclamos.service.EstadoService;
 import sistema.reclamos.service.ICategoriaService;
 import sistema.reclamos.service.IEstadoService;
@@ -41,6 +42,9 @@ public class ReclamoAdminController {
 	
 	@Autowired
 	private HttpSession session;
+	
+	@Autowired
+	private EmailService emailService;
 	
 	@RequestMapping(value = "/{id}/editar") 
 	public String editarReclamo(Model model, @PathVariable Long id) {
@@ -83,17 +87,31 @@ public class ReclamoAdminController {
 		
 		Reclamo reclamo = reclamosService.buscarReclamosPorId(idForm);
 		reclamo.setTitulo(reclamoForm.getTitulo());
-			  reclamo.setDescripcion(reclamoForm.getDescripcion());
-//			  reclamo.setUsuario(usuario);
-			  reclamo.setCalle(reclamoForm.getCalle());
-			  reclamo.setBarrio(reclamoForm.getBarrio());
-			  reclamo.setCategoriaReclamo(categoria);
-			  reclamo.setEstado(estado);
-			  reclamo.setFechaModificacion(new Date());
-			  reclamo.setResolucion(reclamoForm.getResolucion());
-			  reclamosService.actualizarReclamo(reclamo);	 
+		reclamo.setDescripcion(reclamoForm.getDescripcion());
+		reclamo.setCalle(reclamoForm.getCalle());
+		reclamo.setBarrio(reclamoForm.getBarrio());
+		reclamo.setCategoriaReclamo(categoria);
+		reclamo.setEstado(estado);
+		reclamo.setFechaModificacion(new Date());
+		reclamo.setResolucion(reclamoForm.getResolucion());
+		reclamosService.actualizarReclamo(reclamo);	
+			  
+		String destinatario = reclamo.getUsuario().getEmail();	
+		String asunto = "El reclamo " + reclamo.getId() + " cambió de estado ";
+		  
+		emailService.enviarMail(destinatario, asunto, genCuerpoEmail(reclamo));
 			  
 		}
 		return  "redirect:/reclamos/listar";
 	}
+	
+	private String genCuerpoEmail(Reclamo reclamo) {
+			
+			return  "Hola "+ reclamo.getUsuario().getNombre()+ " \n"+
+					"El reclamo "+reclamo.getTitulo()+". Número: " + reclamo.getId() + "\n" +
+					"cambió al estado: '" + reclamo.getEstado().getNombre() + "'. En la fecha: "+reclamo.getFechaModificacion()+ "\n" +
+					"Mensaje: " + reclamo.getResolucion() + "\n"+
+					"Saludos."
+			 ;
+		}
 }

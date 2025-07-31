@@ -8,4 +8,6 @@ public interface IUsuarioService {
 	Boolean findByEmail(String Email);
 	
 	void grabar (Usuario usuario);
+	
+	String findEmailById(Long id);
 }

@@ -19,6 +19,7 @@ import sistema.reclamos.entity.CategoriaReclamo;
 import sistema.reclamos.entity.Estado;
 import sistema.reclamos.entity.Reclamo;
 import sistema.reclamos.entity.Usuario;
+import sistema.reclamos.service.EmailService;
 import sistema.reclamos.service.ICategoriaService;
 import sistema.reclamos.service.IEstadoService;
 import sistema.reclamos.service.IReclamosService;
@@ -39,7 +40,10 @@ public class ReclamosController {
 	@Autowired
 	private IEstadoService estadoService;
 	
-	@RequestMapping(value = "/listar")
+	@Autowired
+	private EmailService emailService;
+	
+	@RequestMapping(value = {"/listar","/inicio"})
 	public String listarReclamos(Model model) {
 		
 		Usuario usuario = (Usuario) session.getAttribute("usuarioLogueado");
@@ -91,52 +95,59 @@ public class ReclamosController {
 	@RequestMapping(value = "/guardar", method = RequestMethod.POST)
 	public String guardar(Model model, @Valid ReclamoForm ReclamoForm, BindingResult bindingResult) {
 		
-		if(bindingResult.hasErrors()) {
-			if(ReclamoForm.getId()== null) {
-				return "redirect:/reclamos/nuevo";
-			}
-			else{
-				String res = String.format("redirect:/reclamos/%s/editar", ReclamoForm.getId());
-				return res;
-			}
-		}
-		
-		Long idForm = ReclamoForm.getId();
-		Long idCategoria = Long.parseLong(ReclamoForm.getCategoria());
 		
 		CategoriaReclamo categoria = new CategoriaReclamo();
-		categoria = categoriaService.buscarCategoriaPorId(idCategoria);
+		categoria = categoriaService.buscarCategoriaPorId( Long.parseLong(ReclamoForm.getCategoria()));
 		
 		Usuario usuario = (session != null) ? (Usuario) session.getAttribute("usuarioLogueado") : null;
 		Estado estado = new Estado();
 		estado.setId(1L);
 		estado.setNombre("");
+		Reclamo reclamo = new Reclamo();
 		
 		if(categoria!=null && usuario!=null) {
-		
-			  if(idForm == null) { 
-				  Reclamo reclamo = new Reclamo();
-				  reclamo.setTitulo(ReclamoForm.getTitulo());
-				  reclamo.setDescripcion(ReclamoForm.getDescripcion());
-				  reclamo.setCategoriaReclamo(categoria);
-				  reclamo.setUsuario(usuario);
-				  reclamo.setCalle(ReclamoForm.getCalle());
-				  reclamo.setBarrio(ReclamoForm.getBarrio());
-				  reclamo.setEstado(estado);
-				  reclamosService.AltaNuevoReclamo(reclamo);
-			  } else { 
-				  Reclamo reclamo = reclamosService.buscarReclamosPorId(idForm);
-				  reclamo.setTitulo(ReclamoForm.getTitulo());
-				  reclamo.setDescripcion(ReclamoForm.getDescripcion());
-				  reclamo.setCategoriaReclamo(categoria);
-				  reclamo.setUsuario(usuario);
-				  reclamo.setCalle(ReclamoForm.getCalle());
-				  reclamo.setBarrio(ReclamoForm.getBarrio());
-				  reclamo.setEstado(estado);
-				  reclamosService.actualizarReclamo(reclamo);
-			  }
+			if(ReclamoForm.getId()== null) { 
+				
+			    reclamo.setTitulo(ReclamoForm.getTitulo());
+			    reclamo.setDescripcion(ReclamoForm.getDescripcion());
+			    reclamo.setCategoriaReclamo(categoria);
+			    reclamo.setUsuario(usuario);
+			    reclamo.setCalle(ReclamoForm.getCalle());
+			    reclamo.setBarrio(ReclamoForm.getBarrio());
+			    reclamo.setEstado(estado);
+			    reclamosService.AltaNuevoReclamo(reclamo);
+			    }
+			
+			String destinatario = usuario.getEmail();
+		    String asunto = "Reclamo " + ReclamoForm.getTitulo() + " generado";
+
+		    emailService.enviarMail(destinatario, asunto, genCuerpoEmail(reclamo));
+	
+//			  else { 
+//				  Reclamo reclamo = reclamosService.buscarReclamosPorId(ReclamoForm.getId());
+//				  reclamo.setTitulo(ReclamoForm.getTitulo());
+//				  reclamo.setDescripcion(ReclamoForm.getDescripcion());
+//				  reclamo.setCategoriaReclamo(categoria);
+//				  reclamo.setUsuario(usuario);
+//				  reclamo.setCalle(ReclamoForm.getCalle());
+//				  reclamo.setBarrio(ReclamoForm.getBarrio());
+//				  reclamo.setEstado(estado);
+//				  reclamosService.actualizarReclamo(reclamo);
+//			  }
+//			  
+			  
 		}
 		return  "redirect:/reclamos/listar";
+	}
+	
+	private String genCuerpoEmail(Reclamo reclamo) {
+		
+		return  "Gracias por realizar el reclamo. \n"+
+				"El número de reclamo es: " + reclamo.getId() + "\n" +
+				"Descripción: \n" + reclamo.getDescripcion() + "\n" +
+				"Categoría: " + reclamo.getCategoriaReclamo() + "\n"+
+				"Saludos."
+		 ;
 	}
 	
 }

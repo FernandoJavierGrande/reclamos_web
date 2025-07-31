@@ -5,7 +5,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
-		<title>Insert title here</title>
+		<title>Sistema de Reclamos</title>
 		
 		<script src="<c:url value="/js/jquery-3.7.1.js" />"></script>
 		<script src="<c:url value="/js/bootstrap.js" />"></script>

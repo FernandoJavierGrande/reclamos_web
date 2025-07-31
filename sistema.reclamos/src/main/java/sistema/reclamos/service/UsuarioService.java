@@ -39,6 +39,12 @@ public class UsuarioService implements IUsuarioService {
 		usuarioRepository.save(usuario);
 		
 	}
-
+	
+	@Override
+	public String findEmailById(Long id) {
+		Optional<Usuario> userTemp = usuarioRepository.findById(id);
+		
+		return (userTemp.isPresent()) ? userTemp.get().getEmail() : "";
+	}
 
 }
